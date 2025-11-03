@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Evolução Terapêutica + Questionário ABA</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --card: #111823;
+      --muted: #9bb0c3;
+      --text: #e6eef6;
+      --accent: #5cc8ff;
+      --danger: #ff6b6b;
+      --ok: #25d366;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg, #071019, #0b0f14 40%);
+      color: var(--text);
+    }
+    header {
+      padding: 28px 18px;
+      border-bottom: 1px solid #1d2733;
+      background: rgba(17,24,35,.6);
+      backdrop-filter: blur(6px);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 18px 80px; }
+    h1 { font-size: 1.6rem; margin: 0 0 4px; letter-spacing: .2px; }
+    p.lead { margin: 4px 0 0; color: var(--muted); }
+
+    .card {
+      background: var(--card); border: 1px solid #1b2532; border-radius: var(--radius);
+      padding: 18px; margin: 18px 0; box-shadow: 0 6px 22px rgba(0,0,0,.35);
+    }
+    .grid { display: grid; gap: 14px; }
+    .grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 800px) { .grid.cols-2 { grid-template-columns: 1fr; } }
+
+    fieldset { border: none; padding: 0; margin: 0;margin-inline-start: 0; margin-inline-end: 0; padding-inline-start: 0;padding-inline-end: 0; }
+    legend { font-weight: 600; margin-bottom: 10px; }
+
+    label { display: block; font-size: .95rem; margin: 6px 0 6px; color: var(--muted); }
+
+    input[type="text"], input[type="email"], input[type="date"], select, textarea, input[type="number"] {
+      width: 100%; background: #0d141e; color: var(--text); border: 1px solid #223145; border-radius: 10px;
+      padding: 10px 12px; outline: none; transition: border .18s ease, box-shadow .18s ease;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(92,200,255,.15); }
+
+    .help { color: var(--muted); font-size: .85rem; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; justify-content: flex-start; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #223145; border-radius: 999px; background: #0d141e; }
+
+    .section-title { font-size: 1.05rem; font-weight: 600; margin: 8px 0 6px; }
+
+    .percent-group { display: grid; grid-template-columns: 1fr 120px; gap: 10px; align-items: center; }
+    .percent-group .unit { opacity: .8; font-size: .9rem; }
+
+    .error { color: var(--danger); font-size: .85rem; margin-top: 4px; display: none; }
+    .ok { color: var(--ok); font-size: .85rem; margin-top: 4px; display: none; }
+
+    .toolbar { position: sticky; bottom: 0; z-index: 9; padding: 12px 18px; border-top: 1px solid #1d2733; background: rgba(17,24,35,.75); backdrop-filter: blur(6px); }
+    .toolbar .row { justify-content: space-between; align-items: center; }
+
+    button {
+      all: unset; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: linear-gradient(180deg,#278ed0,#1b6faa); border: 1px solid #1a77b8; color: #eaf5ff;
+      padding: 10px 16px; border-radius: 12px; cursor: pointer; font-weight: 600;
+      box-shadow: 0 6px 20px rgba(39,142,208,.35);
+    }
+    button.secondary { background: #0d141e; border-color: #223145; color: var(--text); box-shadow: none; }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+
+    .hidden { display: none !important; }
+
+    /* Painel de testes */
+    #testPanel { font-size: .9rem; }
+    #testPanel ul { margin: 8px 0 0 18px; }
+    .pass { color: #8fd19e; }
+    .fail { color: #ff8b8b; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>Evolução Terapêutica + Questionário ABA</h1>
+      <p class="lead">Campos em % aceitam apenas <strong>números de 0 a 100</strong> (sem o símbolo %).</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="card" style="border-left:4px solid #1b6faa">
+      <strong>Controle de acesso</strong>
+      <p class="help">Apenas emails de terapeutas cadastrados aparecem na lista. Se o email não estiver cadastrado, o envio é bloqueado e você deve pedir à coordenação para incluir o terapeuta.</p>
+    </div>
+    <form id="formAba" novalidate>
+      <!-- DADOS DA SESSÃO (sempre visíveis) -->
+      <section class="card" id="sec-dados">
+        <h2 class="section-title">1) Dados da sessão</h2>
+        <div class="grid cols-2">
+          <div>
+            <label for="email">Email do terapeuta</label>
+            <input list="therapistsList" type="email" id="email" name="email" required placeholder="nome@exemplo.com" />
+            <datalist id="therapistsList">
+              <!-- opções geradas dinamicamente no onload -->
+            </datalist>
+            <div class="error" id="err-email">Informe um e-mail válido.</div>
+            <div class="help">Selecione o email da lista para vincular corretamente à planilha individual.</div>
+          </div>
+          <div>
+            <label for="terapeuta">Nome do Terapeuta</label>
+            <input type="text" id="terapeuta" name="terapeuta" required />
+            <div class="help">Preenchido automaticamente ao informar o email (evita erros de digitação).</div>
+          </div>
+          <div>
+            <label for="especialidade">Especialidade do terapeuta</label>
+            <select id="especialidade" name="especialidade" required>
+              <option value="" selected disabled>Selecione…</option>
+              <option>Fonoaudiologia</option>
+              <option>Musicoterapia</option>
+              <option>Psicologia</option>
+              <option>Psicomotricidade</option>
+              <option>Psicopedagogia</option>
+              <option>Terapia ABA</option>
+              <option>Terapia Alimentar</option>
+              <option>Terapia Ocupacional</option>
+            </select>
+          </div>
+          <div>
+            <label for="paciente">Nome do Paciente</label>
+            <input type="text" id="paciente" name="paciente" required />
+          </div>
+          <div>
+            <label for="relatorio">Paciente recebeu o relatório</label>
+            <select id="relatorio" name="relatorio" required>
+              <option value="" selected disabled>Selecione…</option>
+              <option>Sim</option>
+              <option>Não</option>
+            </select>
+          </div>
+          <div>
+            <label for="data">Data da sessão</label>
+            <input type="date" id="data" name="data" required />
+          </div>
+        </div>
+
+        <div class="grid cols-2" style="margin-top:14px">
+          <div>
+            <label>Comparecimento</label>
+            <div class="chips" role="radiogroup" aria-label="Comparecimento">
+              <label class="chip"><input type="radio" name="comparecimento" value="Compareceu" required /> Compareceu</label>
+              <label class="chip"><input type="radio" name="comparecimento" value="Faltou" required /> Faltou</label>
+            </div>
+            <div class="help">Se marcar "Faltou", as seções da sessão serão ocultadas e aparecerá um formulário específico de falta.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FLUXO NORMAL (apenas quando Compareceu) -->
+      <section class="card flow-normal" id="sec-checklists">
+        <h2 class="section-title">2) Checklists da sessão</h2>
+        <fieldset>
+          <legend>Estado de saúde (como a criança chegou)</legend>
+          <div class="chips">
+            <label class="chip"><input type="checkbox" name="estado_saude" value="Ativo(a)" /> Ativo(a)</label>
+            <label class="chip"><input type="checkbox" name="estado_saude" value="Tranquilo(a)" /> Tranquilo(a)</label>
+            <label class="chip"><input type="checkbox" name="estado_saude" value="Sonolento(a)" /> Sonolento(a)</label>
+            <label class="chip"><input type="checkbox" name="estado_saude" value="Irritado(a)" /> Irritado(a)</label>
+            <label class="chip"><input type="checkbox" name="estado_saude" value="Agitado(a)" /> Agitado(a)</label>
+            <label class="chip"><input type="checkbox" name="estado_saude" value="Devagarinho(a)" /> Devagarinho(a)</label>
+            <label class="chip"><input type="checkbox" name="estado_saude" value="Cooperativo(a)" /> Cooperativo(a)</label>
+            <label class="chip"><input type="checkbox" name="estado_saude" value="Não cooperativo(a)" /> Não cooperativo(a)</label>
+          </div>
+        </fieldset>
+
+        <fieldset style="margin-top:12px">
+          <legend>Conduta Terapêutica</legend>
+          <div class="chips">
+            <label class="chip"><input type="checkbox" name="conduta" value="Concentração / Foco" /> Concentração / Foco</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Memória" /> Memória</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Atenção" /> Atenção</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Percepção auditiva" /> Percepção auditiva</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Percepção visual" /> Percepção visual</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Percepção Espacial" /> Percepção Espacial</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Percepção temporal" /> Percepção temporal</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Linguagem" /> Linguagem</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Funções executivas" /> Funções executivas</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Flexibilidade cognitiva" /> Flexibilidade cognitiva</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Capacidade criativa" /> Capacidade criativa</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Brincar funcional" /> Brincar funcional</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Habilidades motoras" /> Habilidades motoras</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Motricidade fina" /> Motricidade fina</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Habilidade social" /> Habilidade social</label>
+            <label class="chip"><input type="checkbox" name="conduta" value="Outras Habilidades" /> Outras Habilidades</label>
+          </div>
+        </fieldset>
+
+        <fieldset style="margin-top:12px">
+          <legend>Observações / Intercorrência</legend>
+          <div class="chips">
+            <label class="chip"><input type="checkbox" name="intercorrencia" value="Sem intercorrências" /> Sem intercorrências</label>
+            <label class="chip"><input type="checkbox" name="intercorrencia" value="Quadro alérgico" /> Quadro alérgico</label>
+            <label class="chip"><input type="checkbox" name="intercorrencia" value="Hedema" /> Hedema</label>
+            <label class="chip"><input type="checkbox" name="intercorrencia" value="Caiu no chão" /> Caiu no chão</label>
+            <label class="chip"><input type="checkbox" name="intercorrencia" value="Necessário chamar o responsável" /> Necessário chamar o responsável</label>
+          </div>
+        </fieldset>
+
+        <fieldset style="margin-top:12px">
+          <legend>Conclusão da terapia</legend>
+          <div class="chips">
+            <label class="chip"><input type="checkbox" name="conclusao_terapia" value="Concluiu sem intercorrência" /> Concluiu sem intercorrência</label>
+            <label class="chip"><input type="checkbox" name="conclusao_terapia" value="Concluiu com suporte total" /> Com suporte total</label>
+            <label class="chip"><input type="checkbox" name="conclusao_terapia" value="Concluiu com suporte parcial" /> Com suporte parcial</label>
+            <label class="chip"><input type="checkbox" name="conclusao_terapia" value="Ficou irritado(a)" /> Ficou irritado(a)</label>
+            <label class="chip"><input type="checkbox" name="conclusao_terapia" value="Ficou chateado(a)" /> Ficou chateado(a)</label>
+          </div>
+        </fieldset>
+
+        <div style="margin-top:12px">
+          <label for="obs">Observações</label>
+          <textarea id="obs" name="obs" rows="3" placeholder="Opcional"></textarea>
+        </div>
+      </section>
+
+      <!-- QUESTIONÁRIO ABA (PERCENTUAIS) -->
+      <section class="card flow-normal" id="sec-aba">
+        <h2 class="section-title">3) Questionário – ABA (percentuais 0–100)</h2>
+        <p class="help">Digite apenas números (sem %). Exemplos: 5, 20, 90, 50, 100.</p>
+
+        <!-- Grupo 1 -->
+        <h3 class="section-title">1. Habilidades básicas / Atenção</h3>
+        <div class="grid">
+          <div class="percent-group">
+            <label for="aten_hab">Habilidade de atenção (%)</label>
+            <input class="pct" id="aten_hab" name="aten_hab" type="number" inputmode="numeric" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="aten_cv">Mantém contato visual breve (%)</label>
+            <input class="pct" id="aten_cv" name="aten_cv" type="number" inputmode="numeric" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="aten_nome">Responde ao próprio nome (%)</label>
+            <input class="pct" id="aten_nome" name="aten_nome" type="number" inputmode="numeric" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="aten_instr">Segue instruções simples (%)</label>
+            <input class="pct" id="aten_instr" name="aten_instr" type="number" inputmode="numeric" min="0" max="100" step="1" required />
+          </div>
+        </div>
+
+        <!-- Grupo 2 -->
+        <h3 class="section-title" style="margin-top:14px">2. Habilidade de Comunicação</h3>
+        <div class="grid">
+          <div class="percent-group">
+            <label for="com_sons">Emite sons vocais (%)</label>
+            <input class="pct" id="com_sons" name="com_sons" type="number" inputmode="numeric" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="com_gestos">Usa gestos para se comunicar (aponta, mostra) (%)</label>
+            <input class="pct" id="com_gestos" name="com_gestos" type="number" inputmode="numeric" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="com_imita">Imita sons ou palavras (%)</label>
+            <input class="pct" id="com_imita" name="com_imita" type="number" inputmode="numeric" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="com_nomeia">Nomeia objetos e pessoas (%)</label>
+            <input class="pct" id="com_nomeia" name="com_nomeia" type="number" inputmode="numeric" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="com_pede">Faz pedido simples (%)</label>
+            <input class="pct" id="com_pede" name="com_pede" type="number" inputmode="numeric" min="0" max="100" step="1" required />
+          </div>
+        </div>
+
+        <!-- Grupo 3 (mais grupos podem ser adicionados) -->
+        <h3 class="section-title" style="margin-top:14px">3. Interação social</h3>
+        <div class="grid">
+          <div class="percent-group">
+            <label for="soc_sorri">Sorri em resposta a estímulos sociais (%)</label>
+            <input class="pct" id="soc_sorri" name="soc_sorri" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="soc_prox">Aceita proximidade de outras crianças (%)</label>
+            <input class="pct" id="soc_prox" name="soc_prox" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="soc_jogos">Participa de jogos simples (%)</label>
+            <input class="pct" id="soc_jogos" name="soc_jogos" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="soc_comp">Compartilha brinquedos ou materiais (%)</label>
+            <input class="pct" id="soc_comp" name="soc_comp" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="soc_inicia">Inicia interações com adultos ou pares (%)</label>
+            <input class="pct" id="soc_inicia" name="soc_inicia" type="number" min="0" max="100" step="1" required />
+          </div>
+        </div>
+
+      <!-- Grupo 4 (mais grupos podem ser adicionados) -->
+        <h3 class="section-title" style="margin-top:14px">4. Habilidade Cognitivas</h3>
+        <div class="grid">
+          <div class="percent-group">
+            <label for="cog_reconhece">Reconhece cores, formas e tamanhos (%)</label>
+            <input class="pct" id="cog_reconhece" name="cog_reconhece" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="cog_associa">Associa objetos semelhantes (%)</label>
+            <input class="pct" id="cog_associa" name="cog_associa" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="cog_identifica">Identifica partes do corpo (%)</label>
+            <input class="pct" id="cog_identifica" name="cog_identifica" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="cog_corresp">Faz correspondência de figuras iguais (%)</label>
+            <input class="pct" id="cog_corresp" name="cog_corresp" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="cog_executa">Executa sequência simples(ex.: colocar blocos um sobre o outro) (%)</label>
+            <input class="pct" id="cog_executa" name="cog_executa" type="number" min="0" max="100" step="1" required />
+          </div>
+        </div>
+
+      <!-- Grupo 5 (mais grupos podem ser adicionados) -->
+        <h3 class="section-title" style="margin-top:14px">5. Habilidade de Motricidade Grossa</h3>
+        <div class="grid">
+          <div class="percent-group">
+            <label for="motGro_senta">Senta-se sem apoio (%)</label>
+            <input class="pct" id="motGro_senta" name="motGro_senta" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="motGro_anda">Anda sem ajuda (%)</label>
+            <input class="pct" id="motGro_anda" name="motGro_anda" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="motGro_corre">Corre com equilíbrio (%)</label>
+            <input class="pct" id="motGro_corre" name="motGro_corre" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="motGro_sobe">Sobe e desce degraus (%)</label>
+            <input class="pct" id="motGro_sobe" name="motGro_sobe" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="motGro_chuta">Chuta ou arremessa bola (%)</label>
+            <input class="pct" id="motGro_chuta" name="motGro_chuta" type="number" min="0" max="100" step="1" required />
+          </div>
+        </div>
+
+      <!-- Grupo 6 (mais grupos podem ser adicionados) -->
+        <h3 class="section-title" style="margin-top:14px">6. Habilidade de Motricidade Fina</h3>
+        <div class="grid">
+          <div class="percent-group">
+            <label for="motFina_pega">Pega objetos pequenos com pinça (%)</label>
+            <input class="pct" id="motFina_pega" name="motFina_pega" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="motFina_rabisca">Rabisca com lápis ou giz (%)</label>
+            <input class="pct" id="motFina_rabisca" name="motFina_rabisca" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="motFina_encaixa">Encaixa peças simples (%)</label>
+            <input class="pct" id="motFina_encaixa" name="motFina_encaixa" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="motFina_virapeca">Vira peças simples (%)</label>
+            <input class="pct" id="motFina_virapeca" name="motFina_virapeca" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="motFina_virapag">Vira páginas de livros (%)</label>
+            <input class="pct" id="motFina_virapag" name="motFina_virapag" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="motFina_talheres">Usa talheres com supervisão (%)</label>
+            <input class="pct" id="motFina_talheres" name="motFina_talheres" type="number" min="0" max="100" step="1" required />
+          </div>
+        </div>
+
+      <!-- Grupo 7 (mais grupos podem ser adicionados) -->
+        <h3 class="section-title" style="margin-top:14px">7. Habilidade de Autonomia</h3>
+        <div class="grid">
+          <div class="percent-group">
+            <label for="auto_levaObj">Leva objetos até o adulto quando solicitado (%)</label>
+            <input class="pct" id="auto_levaObj" name="auto_levaObj" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="auto_colsapato">Tira e coloca sapatos com ajuda (%)</label>
+            <input class="pct" id="auto_colsapato" name="auto_colsapato" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="auto_comeSoz">Come sozinho com colher (%)</label>
+            <input class="pct" id="auto_comeSoz" name="auto_comeSoz" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="auto_LavaEseca">Lava e seca as mãos com supervisão (%)</label>
+            <input class="pct" id="auto_LavaEseca" name="auto_LavaEseca" type="number" min="0" max="100" step="1" required />
+          </div>
+          <div class="percent-group">
+            <label for="auto_guarda">Guarda brinquedos após o uso (%)</label>
+            <input class="pct" id="auto_guarda" name="auto_guarda" type="number" min="0" max="100" step="1" required />
+          </div>
+        </div>
+      </section>
+
+      <section class="card flow-normal" id="sec-revisao">
+        <h2 class="section-title">4) Revisão</h2>
+        <p class="help">Verifique os campos. Campos em % só aceitam 0–100. Se "Faltou" foi selecionado, as seções serão ocultadas e aparecerá o formulário de falta.</p>
+      </section>
+
+      <!-- FORMULÁRIO ALTERNATIVO - MOTIVO DA FALTA (apenas quando Faltou) -->
+      <section class="card hidden flow-falta" id="sec-falta">
+        <h2 class="section-title">Motivo da falta</h2>
+        <div class="grid">
+          <div>
+            <label for="motivo_falta">Selecione o motivo</label>
+            <select id="motivo_falta" name="motivo_falta">
+              <option value="" selected disabled>Selecione…</option>
+              <option>Sem justificativa</option>
+              <option>Troca de agenda ou horário</option>
+              <option>Motivo por doença</option>
+              <option>Problemas pessoais</option>
+            </select>
+          </div>
+          <div>
+            <label for="obs_falta">Observação (opcional)</label>
+            <textarea id="obs_falta" name="obs_falta" rows="3" placeholder="Escreva detalhes, se necessário..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <div class="toolbar">
+        <div class="row">
+          <div class="row" style="gap:10px">
+            <button type="button" class="secondary" id="btnCSV">Baixar respostas (CSV)</button>
+            <button type="button" class="secondary" id="btnPDF">Salvar/Imprimir PDF</button>
+          </div>
+          <div class="row" style="gap:10px">
+            <button type="submit" id="btnSubmit">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div id="toast" class="card hidden" role="status" aria-live="polite"></div>
+
+    <!-- Painel de Testes -->
+    <section class="card" id="testPanel">
+      <h2 class="section-title">Testes automáticos</h2>
+      <p class="help">Validações básicas de sanitização de %, visibilidade do fluxo Compareceu/Faltou, e gerador de CSV.</p>
+      <div class="row">
+        <button type="button" class="secondary" id="runTests">Rodar testes</button>
+        <div id="testOutput" class="help"></div>
+        <ul class="help" style="margin-top:8px">
+          <li>Sanitização % (trunc/0..100)</li>
+          <li>Visibilidade ABA (Compareceu + Especialidade ABA)</li>
+          <li>Fluxo Compareceu/Faltou (mostra/oculta seções corretas)</li>
+          <li>CSV (CRLF e aspas escapadas)</li>
+          <li>Whitelist de terapeutas (email permitido / não permitido)</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    
+    
+// ===== Lista de terapeutas (AGORA VAZIA, SERÁ PREENCHIDA DA PLANILHA) =====
+    let THERAPISTS_LIST = []; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqON8d3zRK-pAgatoeFEm3XCC-jcGVYwWGSgsjIg1m-CHUWQscoDq_sKYR1yIm-dvHPw/exec"; // COLE A SUA URL AQUI
+
+    // --- Declarações de variáveis ---
+    const form = document.getElementById('formAba');
+    const toast = document.getElementById('toast');
+    const secABA = document.getElementById('sec-aba');
+    const selectEsp = document.getElementById('especialidade');
+    const emailInput = document.getElementById('email');
+    const nameInput  = document.getElementById('terapeuta');
+    const datalist   = document.getElementById('therapistsList');
+    const flowNormals = document.querySelectorAll('.flow-normal');
+    const secFalta = document.getElementById('sec-falta');
+
+    // --- Preenche datalist de emails autorizados (Agora usa a lista global) ---
+    function populateTherapistsDatalist() {
+      if (!datalist) return;
+      datalist.innerHTML = '';
+      THERAPISTS_LIST.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.email;
+        opt.label = t.name;
+        datalist.appendChild(opt);
+      });
+    }
+
+    // --- Procura na lista global ---
+    function findTherapistByEmail(email) {
+      if (!email) return null;
+      const v = String(email).trim().toLowerCase();
+      return THERAPISTS_LIST.find(t => t.email.toLowerCase() === v) || null;
+    }
+
+    function syncTherapistNameFromEmail() {
+      const t = findTherapistByEmail(emailInput.value);
+      if (t) {
+        nameInput.value = t.name; // canônico
+        nameInput.readOnly = true;
+        nameInput.classList.remove('invalid');
+      } else {
+        nameInput.readOnly = false; // permitir digitar, mas bloquearemos envio
+      }
+    }
+
+    // --- Sanitização de percentuais ---
+    function sanitizePercentInput(el) {
+      el.value = el.value.replace(/%/g, '').trim();
+      if (el.value === '') return;
+      const n = Number(el.value);
+      if (Number.isNaN(n)) { el.value = ''; return; }
+      el.value = String(Math.trunc(n));
+      let m = Number(el.value);
+      if (m < 0) m = 0;
+      if (m > 100) m = 100;
+      el.value = String(m);
+    }
+
+    document.querySelectorAll('input.pct').forEach(inp => {
+      inp.addEventListener('input', e => sanitizePercentInput(e.target));
+      inp.addEventListener('blur', e => sanitizePercentInput(e.target));
+      inp.setAttribute('pattern', '^([0-9]{1,2}|100)$');
+      inp.setAttribute('title', 'Digite apenas números de 0 a 100');
+    });
+
+    // --- Visibilidade dos fluxos Compareceu/Faltou e da seção ABA ---
+    function updateFormVisibility() {
+      const fd = new FormData(form);
+      const comp = fd.get('comparecimento');
+      const compareceu = comp === 'Compareceu';
+      const faltou = comp === 'Faltou';
+      const espABA = selectEsp && selectEsp.value === 'Terapia ABA';
+
+      // Fluxo normal (2, 3, 4) só quando Compareceu
+      flowNormals.forEach(sec => sec.classList.toggle('hidden', !compareceu));
+
+      // Formulário de falta só quando Faltou
+      secFalta.classList.toggle('hidden', !faltou);
+
+      // ABA só se Compareceu E especialidade = Terapia ABA
+      secABA.classList.toggle('hidden', !(compareceu && espABA));
+      document.querySelectorAll('#sec-aba input.pct').forEach(inp => {
+        inp.required = compareceu && espABA;
+        inp.disabled = !(compareceu && espABA);
+        if (!(compareceu && espABA)) inp.value = '';
+      });
+    }
+
+    // --- Listeners de mudança e estado inicial ---
+    form.addEventListener('change', e => {
+      if (e.target.name === 'comparecimento') updateFormVisibility();
+      if (e.target === emailInput) syncTherapistNameFromEmail();
+      if (e.target === selectEsp) updateFormVisibility();
+    });
+    if (selectEsp) {
+      selectEsp.addEventListener('change', updateFormVisibility);
+    }
+    populateTherapistsDatalist();
+    syncTherapistNameFromEmail();
+    updateFormVisibility();
+
+    // --- CSV helpers ---
+    function escapeCSV(v) {
+      const s = String(v ?? '');
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+
+    function buildCSVFromMap(map) {
+      const headers = [...map.keys()];
+      const row = headers.map(k => {
+        const v = map.get(k);
+        return escapeCSV(Array.isArray(v) ? v.join('; ') : v);
+      });
+      return headers.join(',') + "\r\n" + row.join(',');
+    }
+
+    function downloadCSV() {
+      const data = new FormData(form);
+      const entries = [...data.entries()];
+      const map = new Map();
+      for (const [k, v] of entries) {
+        if (map.has(k)) map.get(k).push(v); else map.set(k, [v]);
+      }
+      const csv = buildCSVFromMap(map);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'resposta_evolucao_aba.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      showToast('CSV gerado com sucesso.');
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2200);
+    }
+
+    document.getElementById('btnCSV').addEventListener('click', downloadCSV);
+    document.getElementById('btnPDF').addEventListener('click', () => window.print());
+
+    // 
+    // ===================================================================
+    // == ESTA É A FUNÇÃO DE SUBMIT CORRETA (SÓ PODE TER UMA!) ==
+    // ===================================================================
+    //
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const ther = findTherapistByEmail(emailInput.value);
+      if (!ther) {
+        showToast('Email de terapeuta não cadastrado. Verifique a planilha "Terapeutas".');
+        emailInput.focus();
+        return;
+      }
+      nameInput.value = ther.name; // Força nome canônico
+      
+      if (!form.reportValidity()) {
+        showToast('Verifique os campos destacados.');
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+      showToast('Enviando para o Google Sheets...');
+
+      const formData = new FormData(form);
+      const dataPayload = {};
+      const keys = new Set([...formData.keys()]);
+      
+      keys.forEach(key => {
+        const values = formData.getAll(key);
+        dataPayload[key] = values.length > 1 ? values.join('; ') : values[0];
+      });
+      dataPayload['terapeuta'] = ther.name;
+      
+      // ASSEGURE-SE QUE A URL ESTÁ CORRETA AQUI
+      if (SCRIPT_URL === "COLE_A_SUA_URL_DO_APPS_SCRIPT_AQUI") {
+        showToast('ERRO: A URL do Script não foi configurada no HTML.');
+        btn.disabled = false;
+        btn.textContent = 'Enviar';
+        return;
+      }
+      
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors', 
+          cache: 'no-cache',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dataPayload) 
+        });
+        
+        showToast('Evolução enviada com sucesso!');
+        form.reset(); 
+        setTimeout(updateFormVisibility, 50); 
+        // Não precisa repopular a lista, ela não mudou
+  
+      } catch (error) {
+        console.error('Erro ao enviar:', error);
+        showToast('ERRO: Não foi possível enviar. Tente novamente.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Enviar';
+      }
+    });
+
+    // --- Testes automáticos ---
+    function runTests() {
+      const out = document.getElementById('testOutput');
+      const results = [];
+
+      // Teste 1: sanitizePercentInput (trunca e clampa)
+      const mock = document.createElement('input');
+      mock.value = '-5%'; sanitizePercentInput(mock); results.push({name:'%-5 → 0', pass: mock.value === '0', got: mock.value});
+      mock.value = '150'; sanitizePercentInput(mock); results.push({name:'150 → 100', pass: mock.value === '100', got: mock.value});
+      mock.value = '20.9'; sanitizePercentInput(mock); results.push({name:'20.9 → 20', pass: mock.value === '20', got: mock.value});
+      mock.value = 'abc'; sanitizePercentInput(mock); results.push({name:'abc → ""', pass: mock.value === '', got: mock.value});
+
+      // Teste 2: visibilidade da seção ABA
+      selectEsp.value = 'Psicologia';
+      form.querySelector('input[name="comparecimento"][value="Compareceu"]').checked = true;
+      updateFormVisibility();
+      results.push({name:'Esp≠ABA & Compareceu ⇒ ABA oculto', pass: secABA.classList.contains('hidden'), got: secABA.className});
+
+      selectEsp.value = 'Terapia ABA';
+      updateFormVisibility();
+      results.push({name:'Esp=ABA & Compareceu ⇒ ABA visível', pass: !secABA.classList.contains('hidden'), got: secABA.className});
+
+      form.querySelector('input[name="comparecimento"][value="Faltou"]').checked = true;
+      updateFormVisibility();
+      results.push({name:'Faltou ⇒ ABA oculto', pass: secABA.classList.contains('hidden'), got: secABA.className});
+
+      // Teste 3: fluxo Compareceu/Faltou
+      form.querySelector('input[name="comparecimento"][value="Compareceu"]').checked = true;
+      selectEsp.value = 'Psicologia';
+      updateFormVisibility();
+      const normalsVisible = [...flowNormals].every(sec => !sec.classList.contains('hidden'));
+      const faltaHidden = secFalta.classList.contains('hidden');
+      results.push({name:'Compareceu ⇒ seções normais visíveis', pass: normalsVisible, got: normalsVisible});
+      results.push({name:'Compareceu ⇒ sec-falta oculto', pass: faltaHidden, got: !faltaHidden});
+
+      // Faltou: flow-normal oculto, sec-falta visível
+      form.querySelector('input[name="comparecimento"][value="Faltou"]').checked = true;
+      updateFormVisibility();
+      const normalsHidden = [...flowNormals].every(sec => sec.classList.contains('hidden'));
+      const faltaVisible = !secFalta.classList.contains('hidden');
+      results.push({name:'Faltou ⇒ seções normais ocultas', pass: normalsHidden, got: normalsHidden});
+      results.push({name:'Faltou ⇒ sec-falta visível', pass: faltaVisible, got: faltaVisible});
+
+      // Teste 4: CSV usa quebra correta e escapa aspas
+      const m = new Map([
+        ['campo1', ['a','b']],
+        ['texto', ['Ele disse "oi"']]
+      ]);
+      const csv = buildCSVFromMap(m);
+      const hasCRLF = /\r\n/.test(csv);
+      const escaped = /"Ele disse ""oi"""/.test(csv);
+      results.push({name:'CSV quebra \\r\\n', pass: hasCRLF, got: csv});
+      results.push({name:'CSV escapa aspas', pass: escaped, got: csv});
+
+      // Teste 5: whitelist — email permitido e não permitido
+      const known = THERAPISTS[0]?.email || 'terapeuta1@exemplo.com';
+      const unknown = 'nao_cadastrado@exemplo.com';
+      results.push({name:'Whitelist conhecido', pass: !!findTherapistByEmail(known), got: known});
+      results.push({name:'Whitelist desconhecido', pass: !findTherapistByEmail(unknown), got: unknown});
+
+      // Renderiza
+      const ul = document.createElement('ul');
+      results.forEach(r => {
+        const li = document.createElement('li');
+        li.className = r.pass ? 'pass' : 'fail';
+        li.textContent = `${r.pass ? '✔' : '✖'} ${r.name}`;
+        if (!r.pass) {
+          const small = document.createElement('div');
+          small.className = 'help';
+          small.textContent = `Obtido: ${r.got}`;
+          li.appendChild(small);
+        }
+        ul.appendChild(li);
+      });
+      out.innerHTML = '';
+      out.appendChild(ul);
+    }
+
+    document.getElementById('runTests').addEventListener('click', runTests);
+
+// --- NOVA FUNÇÃO PARA CARREGAR OS TERAPEUTAS ---
+    // Busca a lista de terapeutas na planilha ao carregar a página
+    async function loadTherapists() {
+      // Mostra um status inicial
+      emailInput.placeholder = "Carregando terapeutas...";
+      emailInput.disabled = true;
+      
+      if (SCRIPT_URL === "COLE_A_SUA_URL_DO_APPS_SCRIPT_AQUI") {
+        showToast('ERRO: A URL do Script não foi configurada no HTML.');
+        return;
+      }
+
+      try {
+        // O 'fetch' para a mesma URL, mas sem 'POST', vira um 'GET'
+        const response = await fetch(SCRIPT_URL);
+        if (!response.ok) {
+          throw new Error(`Falha na rede: ${response.statusText}`);
+        }
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(`Erro do Script: ${data.error}`);
+        }
+        
+        THERAPISTS_LIST = data; // Preenche a lista global
+        populateTherapistsDatalist(); // Agora, preenche o <datalist>
+        
+        emailInput.placeholder = "nome@exemplo.com";
+        emailInput.disabled = false;
+      
+      } catch (error) {
+        console.error('Erro ao carregar lista de Terapeutas:', error);
+        showToast('ERRO: Não foi possível carregar a lista de terapeutas.');
+        emailInput.placeholder = "Erro ao carregar lista";
+      }
+    }
+
+    // --- INICIALIZAÇÃO ---
+    // Estado inicial dos formulários
+    updateFormVisibility(); 
+    // Carrega a lista de terapeutas da planilha
+    loadTherapists();
+
+  </script>
+</body>
+</html>
